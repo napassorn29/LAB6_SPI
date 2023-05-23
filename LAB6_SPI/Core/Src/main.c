@@ -45,6 +45,14 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
+uint8_t SPIRx[10];
+uint8_t SPITx[10];
+
+uint8_t switch_read;
+uint8_t check = 0;
+
+uint8_t cmd = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -93,6 +101,9 @@ int main(void)
   MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 
+  SPITxRx_Setup();
+  setOutputGPIOB();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -102,6 +113,37 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  static uint32_t timestamp = 0;
+	  if(HAL_GetTick() > timestamp)
+	  {
+		  timestamp = HAL_GetTick() + 10;
+		  cmd++;
+		  cmd = cmd % 2;
+		  switch (cmd)
+		  {
+		  case 0:
+			  SPITxRx_readIO();
+			  break;
+		  case 1:
+			  SPITxRx_writeIO();
+			  break;
+//		  case 2:
+//			  setOutputGPIOB();
+//			  break;
+		  }
+	  }
+//	  SPITxRx_writeIO();
+
+//	  if(check == 0)
+//	  {
+//		  check == 1;
+//		  SPITxRx_readIO();
+//	  }
+//	  else if(check == 0)
+//	  {
+//		  check == 0;
+//		  SPITxRx_writeIO();
+//	  }
   }
   /* USER CODE END 3 */
 }
@@ -268,6 +310,176 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+void SPITxRx_Setup()
+{
+	//CS pulse
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0); // CS Select
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 1); // CS deSelect
+	HAL_Delay(1);
+}
+
+void SPITxRx_readIO()
+{
+	if (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2))
+	{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000001;
+		SPITx[1] = 0x12;
+		SPITx[2] = 0;
+		SPITx[3] = 0;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 4);
+		switch_read = SPIRx[2];
+	}
+}
+
+
+void setOutputGPIOB()
+{
+	if (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2))
+	{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x01;
+		SPITx[2] = 0b00000000;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+	}
+}
+
+void SPITxRx_writeIO()
+{
+	if (HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2))
+	{
+		if(SPIRx[2] == 0b00001110)
+		{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b10101010;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b01010101;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		}
+		else if(SPIRx[2] == 0b00001111)
+		{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11111111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		}
+		else if(SPIRx[2] == 0b00001101)
+		{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b00111111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11001111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11110011;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11111100;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		}
+		else if(SPIRx[2] == 0b00001011)
+		{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11111110;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b01111111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11111101;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b10111111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11111011;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11011111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11110111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11101111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		}
+		else if(SPIRx[2] == 0b00000111)
+		{
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b00001111;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
+		SPITx[0] = 0b01000000;
+		SPITx[1] = 0x13;
+		SPITx[2] = 0b11110000;
+		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
+		HAL_Delay(100);
+		}
+	}
+}
+
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 1); //CS dnSelect
+}
+
+//void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+//{
+//	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 1); //CS dnSelect
+//}
 
 /* USER CODE END 4 */
 
