@@ -358,13 +358,13 @@ void SPITxRx_writeIO()
 		SPITx[1] = 0x13;
 		SPITx[2] = 0b10101010;
 		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
-		HAL_Delay(100);
+		HAL_Delay(500);
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, 0);
 		SPITx[0] = 0b01000000;
 		SPITx[1] = 0x13;
 		SPITx[2] = 0b01010101;
 		HAL_SPI_TransmitReceive_IT(&hspi3, SPITx, SPIRx, 3);
-		HAL_Delay(100);
+		HAL_Delay(500);
 		}
 		else if(SPIRx[2] == 0b00001111)
 		{
